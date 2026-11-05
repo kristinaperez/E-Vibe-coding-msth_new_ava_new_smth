@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Выделяйся — аватарки для соцсетей</title>
+<meta name="description" content="Аватарка в едином стиле для Threads, ВКонтакте, Макс, LinkedIn, Facebook и Instagram. Фото не уходит с вашего устройства.">
+<style>
+  :root {
+    --bg: #f6f6f8;
+    --card: #ffffff;
+    --text: #1a1a1f;
+    --muted: #6b6b76;
+    --line: #e3e3ea;
+    --accent: #7c5cff;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101014;
+      --card: #1a1a21;
+      --text: #f2f2f5;
+      --muted: #9b9ba8;
+      --line: #2c2c36;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101014;
+    --card: #1a1a21;
+    --text: #f2f2f5;
+    --muted: #9b9ba8;
+    --line: #2c2c36;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; }
+  h2 { font-size: 20px; margin: 0 0 12px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
+  input[type="text"], input[type="url"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+  input[type="range"] { width: 100%; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .swatch {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid transparent; cursor: pointer; padding: 0;
+  }
+  .swatch[aria-pressed="true"] { border-color: var(--text); }
+  .preview-wrap { display: flex; justify-content: center; }
+  canvas.preview {
+    width: 100%; max-width: 420px; height: auto;
+    border-radius: 50%; background: #222;
+  }
+  button {
+    font: inherit;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--text); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .downloads { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .dev {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    color: var(--muted);
+  }
+  .tag {
+    display: inline-block; font-size: 12px; padding: 2px 8px;
+    border-radius: 999px; background: var(--bg); border: 1px solid var(--line);
+    color: var(--muted); margin-left: 6px; vertical-align: middle;
+  }
+  .gate { opacity: 1; transition: opacity .2s; }
+  .gate.locked .gate-body { opacity: .5; }
+  .checkline { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; }
+  .checkline input { margin-top: 5px; }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Выделяйся</h1>
+  <p class="lead">Аватарка в едином стиле для всех соцсетей. Фото обрабатывается в вашем браузере и никуда не загружается.</p>
+
+  <div class="grid">
+    <!-- 1. Фото и настройки -->
+    <section class="card">
+      <h2>1. Фото и текст</h2>
+
+      <label for="photo">Фото</label>
+      <input id="photo" type="file" accept="image/*">
+
+      <label for="mood">Настроение сейчас</label>
+      <input id="mood" type="text" maxlength="40" placeholder="например: в поиске нового" value="">
+
+      <label for="request">Ваш запрос (подсветится)</label>
+      <input id="request" type="text" maxlength="50" placeholder="например: ищу клиентов на автоматизацию" value="">
+
+      <label for="cta">Call to action (только для Threads, виден при открытии аватарки)</label>
+      <input id="cta" type="text" maxlength="90" value="Попробуйте наш новый сервис. Проект «Выделяйся»">
+
+      <label>Цвет кольца и подсветки</label>
+      <div class="row" id="swatches"></div>
+
+      <div class="checkline">
+        <input id="ring" type="checkbox" checked>
+        <span>Кольцо вокруг аватарки</span>
+      </div>
+
+      <label for="zoom">Масштаб фото</label>
+      <input id="zoom" type="range" min="1" max="3" step="0.01" value="1">
+      <label for="ox">Сдвиг по горизонтали</label>
+      <input id="ox" type="range" min="-1" max="1" step="0.01" value="0">
+      <label for="oy">Сдвиг по вертикали</label>
+      <input id="oy" type="range" min="-1" max="1" step="0.01" value="0">
+    </section>
+
+    <!-- 2. Превью и выгрузка -->
+    <section class="card">
+      <h2>2. Превью</h2>
+      <div class="preview-wrap">
+        <canvas id="preview" class="preview" width="1080" height="1080" aria-label="Превью аватарки"></canvas>
+      </div>
+      <p class="hint">Превью показывает версию для Threads с call to action.</p>
+
+      <h2 style="margin-top:20px">Скачать аватарку</h2>
+      <div class="downloads">
+        <button data-export="threads">Threads (кольцо + CTA)</button>
+        <button data-export="vk" class="ghost">ВКонтакте</button>
+        <button data-export="max" class="ghost">Макс</button>
+        <button data-export="linkedin" class="ghost">LinkedIn</button>
+        <button data-export="facebook" class="ghost">Facebook</button>
+        <button data-export="instagram" class="ghost">Instagram</button>
+      </div>
+      <p class="hint">Все файлы 1080×1080 PNG. Платформы сами сжимают их под свои размеры.</p>
+    </section>
+
+    <!-- 3. Подарки -->
+    <section class="card gate locked" id="gift-card" style="grid-column: 1 / -1">
+      <h2>3. Подарки <span class="tag" id="gift-status">закрыто</span></h2>
+      <p class="muted">Откроется, когда вы сделали хотя бы одну аватарку и поделились своей соцсетью.</p>
+
+      <div class="gate-body">
+        <label for="social">Ссылка на ваш профиль (любая соцсеть)</label>
+        <input id="social" type="url" placeholder="https://www.threads.net/@ваш_ник">
+
+        <div class="checkline">
+          <input id="share-ok" type="checkbox">
+          <span>Я поделился(-лась) своим профилем и хочу получить подарки</span>
+        </div>
+
+        <div class="downloads" style="margin-top:16px">
+          <button id="dl-bg" disabled>Фон для Zoom / Google Meet (1920×1080)</button>
+          <button id="dl-guide" class="ghost" disabled>Гайд по стилю (TXT)</button>
+        </div>
+        <p class="hint">Топовый прообраз для вас будет добавлен отдельно. Сейчас его нет в файлах, и в гайде стоит заглушка.</p>
+      </div>
+    </section>
+
+    <!-- 4. Баннеры -->
+    <section class="dev" style="grid-column: 1 / -1">
+      <strong>Баннеры для бизнеса</strong> — в разработке. Для них понадобится больше информации о вас и о проекте.
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const COLORS = [
+    { hex: '#7c5cff', name: 'фиолетовый' },
+    { hex: '#ff5c8a', name: 'розовый' },
+    { hex: '#ffb020', name: 'янтарный' },
+    { hex: '#20c997', name: 'бирюзовый' },
+    { hex: '#2f80ed', name: 'синий' },
+    { hex: '#111111', name: 'чёрный' }
+  ];
+
+  const state = {
+    img: null,
+    mood: '',
+    request: '',
+    cta: $('cta').value,
+    color: COLORS[0].hex,
+    ring: true,
+    zoom: 1, ox: 0, oy: 0
+  };
+  let madeOne = false;
+
+  // ---------- палитра ----------
+  const swatches = $('swatches');
+  COLORS.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    b.style.background = c.hex;
+    b.title = c.name;
+    b.setAttribute('aria-label', c.name);
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      state.color = c.hex;
+      swatches.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+      render();
+    });
+    swatches.appendChild(b);
+  });
+
+  // ---------- утилиты canvas ----------
+  function fitFont(ctx, text, maxW, maxSize, minSize, weight = '700') {
+    for (let s = maxSize; s >= minSize; s -= 2) {
+      ctx.font = `${weight} ${s}px Arial, "Segoe UI", sans-serif`;
+      if (ctx.measureText(text).width <= maxW) return s;
+    }
+    return minSize;
+  }
+
+  function wrap(ctx, text, maxW) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    words.forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width <= maxW || !line) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = w;
+      }
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function isLight(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+  }
+
+  // ---------- главная отрисовка аватарки ----------
+  function drawAvatar(ctx, S, withCta) {
+    const R = S / 2;
+    const ringW = state.ring ? S * 0.045 : 0;
+    const pr = R - ringW;
+
+    ctx.save();
+    ctx.fillStyle = '#2a2a33';
+    ctx.fillRect(0, 0, S, S);
+
+    // фото в круге
+    ctx.beginPath();
+    ctx.arc(R, R, pr, 0, Math.PI * 2);
+    ctx.clip();
+    if (state.img) {
+      const iw = state.img.naturalWidth, ih = state.img.naturalHeight;
+      const base = Math.max((2 * pr) / iw, (2 * pr) / ih) * state.zoom;
+      const w = iw * base, h = ih * base;
+      const x = R - w / 2 + state.ox * pr;
+      const y = R - h / 2 + state.oy * pr;
+      ctx.drawImage(state.img, x, y, w, h);
+    }
+
+    // затемнение снизу под текст
+    const g = ctx.createLinearGradient(0, S * 0.45, 0, S);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.78)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+
+    // ширина строки зависит от высоты в круге
+    const widthAt = (yFrac) => {
+      const dy = Math.abs(yFrac * S - R);
+      const half = Math.sqrt(Math.max(pr * pr - dy * dy, 0));
+      return half * 2 * 0.86;
+    };
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = S * 0.012;
+    ctx.shadowOffsetY = S * 0.004;
+
+    // настроение
+    if (state.mood) {
+      const y = S * 0.6;
+      const maxW = widthAt(0.6);
+      const size = fitFont(ctx, state.mood, maxW, S * 0.085, S * 0.04);
+      ctx.font = `700 ${size}px Arial, "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(state.mood, R, y);
+    }
+
+    // подсвеченный запрос: плашка цвета кольца
+    if (state.request) {
+      const y = S * 0.72;
+      const maxW = widthAt(0.72) - S * 0.06;
+      const size = fitFont(ctx, state.request, maxW, S * 0.06, S * 0.032);
+      ctx.font = `700 ${size}px Arial, "Segoe UI", sans-serif`;
+      const tw = ctx.measureText(state.request).width;
+      const padX = S * 0.025, h = size * 1.5;
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = state.color;
+      roundRect(ctx, R - tw / 2 - padX, y - h / 2, tw + padX * 2, h, h / 2);
+      ctx.fill();
+      ctx.fillStyle = isLight(state.color) ? '#111111' : '#ffffff';
+      ctx.fillText(state.request, R, y);
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    }
+
+    // call to action (Threads): виден при открытии аватарки
+    if (withCta && state.cta) {
+      const startY = S * 0.84;
+      const maxW = widthAt(0.84);
+      const size = S * 0.034;
+      ctx.font = `600 ${size}px Arial, "Segoe UI", sans-serif`;
+      const lines = wrap(ctx, state.cta, maxW).slice(0, 3);
+      ctx.fillStyle = '#ffffff';
+      lines.forEach((ln, i) => ctx.fillText(ln, R, startY + i * size * 1.25));
+    }
+
+    ctx.restore();
+
+    // кольцо поверх всего
+    if (state.ring) {
+      ctx.save();
+      ctx.lineWidth = ringW;
+      ctx.strokeStyle = state.color;
+      ctx.beginPath();
+      ctx.arc(R, R, R - ringW / 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ---------- превью ----------
+  const preview = $('preview');
+  const pctx = preview.getContext('2d');
+  function render() {
+    pctx.clearRect(0, 0, 1080, 1080);
+    drawAvatar(pctx, 1080, true);
+  }
+
+  // ---------- выгрузка ----------
+  function download(canvas, name) {
+    canvas.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }, 'image/png');
+  }
+
+  function exportAvatar(network) {
+    const withCta = network === 'threads';
+    const c = document.createElement('canvas');
+    c.width = c.height = 1080;
+    drawAvatar(c.getContext('2d'), 1080, withCta);
+    download(c, `avatar-${network}.png`);
+    madeOne = true;
+    updateGate();
+  }
+
+  function exportZoomBg() {
+    const W = 1920, H = 1080;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, state.color);
+    g.addColorStop(1, '#111114');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = isLight(state.color) ? '#111111' : '#ffffff';
+    const textW = 900;
+    if (state.mood) {
+      const size = fitFont(ctx, state.mood, textW, 120, 60);
+      ctx.font = `700 ${size}px Arial, "Segoe UI", sans-serif`;
+      ctx.fillText(state.mood, 120, 460);
+    }
+    if (state.request) {
+      const size = fitFont(ctx, state.request, textW, 64, 36, '600');
+      ctx.font = `600 ${size}px Arial, "Segoe UI", sans-serif`;
+      ctx.fillText(state.request, 120, 560);
+    }
+    ctx.font = '600 36px Arial, "Segoe UI", sans-serif';
+    ctx.globalAlpha = 0.85;
+    ctx.fillText('Выделяйся', 120, 960);
+    ctx.globalAlpha = 1;
+
+    // аватарка справа
+    const av = document.createElement('canvas');
+    av.width = av.height = 760;
+    drawAvatar(av.getContext('2d'), 760, false);
+    ctx.drawImage(av, 1400 - 380, 540 - 380);
+
+    download(c, 'zoom-meet-background.png');
+  }
+
+  function exportGuide() {
+    const colorName = (COLORS.find(c => c.hex === state.color) || COLORS[0]).name;
+    const text = [
+      'ГАЙД ПО СТИЛЮ — Выделяйся',
+      '',
+      'Цвет кольца и подсветки: ' + colorName + ' (' + state.color + ')',
+      'Настроение: ' + (state.mood || '—'),
+      'Запрос: ' + (state.request || '—'),
+      '',
+      'Правила единого стиля:',
+      '1. Одна аватарка, один цвет, одна фраза — во всех соцсетях.',
+      '2. Одна и та же рамка и круг везде.',
+      '3. Текст на аватарке короткий: настроение + запрос.',
+      '4. Фон для видеозвонков — в том же цвете, что и кольцо.',
+      '',
+      'Ваш топовый прообраз: [будет добавлен]',
+      ''
+    ].join('\n');
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'style-guide.txt';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  // ---------- замок подарков ----------
+  function updateGate() {
+    const ok = madeOne && $('share-ok').checked && $('social').value.trim().length > 0;
+    $('dl-bg').disabled = !ok;
+    $('dl-guide').disabled = !ok;
+    $('gift-status').textContent = ok ? 'открыто' : 'закрыто';
+    $('gift-card').classList.toggle('locked', !ok);
+  }
+
+  // ---------- обработчики ----------
+  $('photo').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      state.img = img;
+      render();
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  const bind = (id, key, transform = (v) => v) => {
+    $(id).addEventListener('input', (e) => {
+      state[key] = transform(e.target.value);
+      render();
+    });
+  };
+  bind('mood', 'mood', v => v.trim());
+  bind('request', 'request', v => v.trim());
+  bind('cta', 'cta', v => v.trim());
+  bind('zoom', 'zoom', parseFloat);
+  bind('ox', 'ox', parseFloat);
+  bind('oy', 'oy', parseFloat);
+
+  $('ring').addEventListener('change', (e) => {
+    state.ring = e.target.checked;
+    render();
+  });
+
+  document.querySelectorAll('[data-export]').forEach(btn => {
+    btn.addEventListener('click', () => exportAvatar(btn.dataset.export));
+  });
+
+  $('social').addEventListener('input', updateGate);
+  $('share-ok').addEventListener('change', updateGate);
+  $('dl-bg').addEventListener('click', exportZoomBg);
+  $('dl-guide').addEventListener('click', exportGuide);
+
+  render();
+  updateGate();
+})();
+</script>
+</body>
+</html>
