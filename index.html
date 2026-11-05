@@ -429,12 +429,6 @@
     ctx.fillText('Выделяйся', 120, 960);
     ctx.globalAlpha = 1;
 
-    // аватарка справа
-    const av = document.createElement('canvas');
-    av.width = av.height = 760;
-    drawAvatar(av.getContext('2d'), 760, false);
-    ctx.drawImage(av, 1400 - 380, 540 - 380);
-
     download(c, 'zoom-meet-background.png');
   }
 
