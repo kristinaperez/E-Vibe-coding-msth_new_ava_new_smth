@@ -167,8 +167,8 @@
       <p class="muted">Откроется, когда вы сделали хотя бы одну аватарку и поделились своей соцсетью.</p>
 
       <div class="gate-body">
-        <label for="social">Ссылка на ваш профиль (любая соцсеть)</label>
-        <input id="social" type="url" placeholder="https://www.threads.net/@ваш_ник">
+        <a id="threads-login" class="button" href="/api/threads/login">Войти через Threads</a>
+        <p class="hint" id="threads-user">Вход не выполнен. Подарки открываются после входа через Threads.</p>
 
         <div class="checkline">
           <input id="share-ok" type="checkbox">
@@ -459,9 +459,27 @@
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
-  // ---------- замок подарков ----------
+  // ---------- вход через Threads и замок подарков ----------
+  let threadsUser = null;
+
+  async function loadThreadsSession() {
+    try {
+      const res = await fetch('/api/threads/me', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      threadsUser = data.username || null;
+    } catch (e) {
+      threadsUser = null;
+    }
+    $('threads-user').textContent = threadsUser
+      ? 'Вход выполнен: @' + threadsUser
+      : 'Вход не выполнен. Подарки открываются после входа через Threads.';
+    $('threads-login').hidden = !!threadsUser;
+    updateGate();
+  }
+
   function updateGate() {
-    const ok = madeOne && $('share-ok').checked && $('social').value.trim().length > 0;
+    const ok = madeOne && $('share-ok').checked && !!threadsUser;
     $('dl-bg').disabled = !ok;
     $('dl-guide').disabled = !ok;
     $('gift-status').textContent = ok ? 'открыто' : 'закрыто';
@@ -504,13 +522,13 @@
     btn.addEventListener('click', () => exportAvatar(btn.dataset.export));
   });
 
-  $('social').addEventListener('input', updateGate);
   $('share-ok').addEventListener('change', updateGate);
   $('dl-bg').addEventListener('click', exportZoomBg);
   $('dl-guide').addEventListener('click', exportGuide);
 
   render();
   updateGate();
+  loadThreadsSession();
 })();
 </script>
 </body>
