@@ -111,10 +111,14 @@
   <div class="grid">
     <!-- 1. Фото и настройки -->
     <section class="card">
-      <h2>1. Фото и текст</h2>
+      <h2>1. Вход и фото</h2>
+
+      <p class="muted">Чтобы сделать аватарку, войдите через Threads. После входа фото загружается и аватарку можно скачать.</p>
+      <a id="threads-login" class="button" href="/api/threads/login">Войти через Threads</a>
+      <p class="hint" id="threads-user">Вход не выполнен.</p>
 
       <label for="photo">Фото</label>
-      <input id="photo" type="file" accept="image/*">
+      <input id="photo" type="file" accept="image/*" disabled>
 
       <label for="mood">Настроение сейчас</label>
       <input id="mood" type="text" maxlength="40" placeholder="например: в поиске нового" value="">
@@ -164,12 +168,9 @@
     <!-- 3. Подарки -->
     <section class="card gate locked" id="gift-card" style="grid-column: 1 / -1">
       <h2>3. Подарки <span class="tag" id="gift-status">закрыто</span></h2>
-      <p class="muted">Откроется, когда вы сделали хотя бы одну аватарку и поделились своей соцсетью.</p>
+      <p class="muted">Откроется, когда вы вошли через Threads, сделали хотя бы одну аватарку и поделились своей соцсетью.</p>
 
       <div class="gate-body">
-        <a id="threads-login" class="button" href="/api/threads/login">Войти через Threads</a>
-        <p class="hint" id="threads-user">Вход не выполнен. Подарки открываются после входа через Threads.</p>
-
         <div class="checkline">
           <input id="share-ok" type="checkbox">
           <span>Я поделился(-лась) своим профилем и хочу получить подарки</span>
@@ -473,8 +474,9 @@
     }
     $('threads-user').textContent = threadsUser
       ? 'Вход выполнен: @' + threadsUser
-      : 'Вход не выполнен. Подарки открываются после входа через Threads.';
+      : 'Вход не выполнен.';
     $('threads-login').hidden = !!threadsUser;
+    $('photo').disabled = !threadsUser;
     updateGate();
   }
 
